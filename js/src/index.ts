@@ -9,3 +9,11 @@ export function parseSpec(specJSON: string): import('./types').Spec {
   return JSON.parse(specJSON);
 }
 
+// Framework-agnostic helpers
+export {
+  fetchSpec,
+  validateField,
+  groupErrorsByField,
+  groupAllErrorsByField,
+  createFormValidator,
+} from './helpers';
