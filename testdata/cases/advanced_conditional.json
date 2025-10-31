@@ -1,0 +1,109 @@
+{
+  "testCases": [
+    {
+      "name": "or_condition_hasEmail_true_email_required",
+      "data": {
+        "hasEmail": true,
+        "hasPhone": false,
+        "email": "user@example.com",
+        "age": 25,
+        "country": "US"
+      },
+      "expectedValid": true
+    },
+    {
+      "name": "or_condition_hasPhone_true_phone_required",
+      "data": {
+        "hasEmail": false,
+        "hasPhone": true,
+        "phone": "1234567890",
+        "age": 25,
+        "country": "US"
+      },
+      "expectedValid": true
+    },
+    {
+      "name": "or_condition_both_true_both_validated",
+      "data": {
+        "hasEmail": true,
+        "hasPhone": true,
+        "email": "user@example.com",
+        "phone": "1234567890",
+        "age": 25,
+        "country": "US"
+      },
+      "expectedValid": true
+    },
+    {
+      "name": "or_condition_email_missing",
+      "data": {
+        "hasEmail": true,
+        "hasPhone": false,
+        "email": "",
+        "age": 25,
+        "country": "US"
+      },
+      "expectedValid": false
+    },
+    {
+      "name": "parentheses_minor_in_us_needs_verification",
+      "data": {
+        "hasEmail": false,
+        "hasPhone": false,
+        "age": 16,
+        "country": "US",
+        "requireVerification": false,
+        "verificationCode": "ABC123"
+      },
+      "expectedValid": true
+    },
+    {
+      "name": "parentheses_minor_in_us_without_verification_code",
+      "data": {
+        "hasEmail": false,
+        "hasPhone": false,
+        "age": 16,
+        "country": "US",
+        "requireVerification": false,
+        "verificationCode": ""
+      },
+      "expectedValid": false
+    },
+    {
+      "name": "parentheses_adult_in_us_doesnt_need_verification",
+      "data": {
+        "hasEmail": false,
+        "hasPhone": false,
+        "age": 25,
+        "country": "US",
+        "requireVerification": false
+      },
+      "expectedValid": true
+    },
+    {
+      "name": "parentheses_requireVerification_true_needs_code",
+      "data": {
+        "hasEmail": false,
+        "hasPhone": false,
+        "age": 25,
+        "country": "CA",
+        "requireVerification": true,
+        "verificationCode": "XYZ789"
+      },
+      "expectedValid": true
+    },
+    {
+      "name": "complex_and_condition_both_email_and_phone_validated",
+      "data": {
+        "hasEmail": true,
+        "hasPhone": true,
+        "email": "user@example.com",
+        "phone": "1234567890123456",
+        "age": 25,
+        "country": "US"
+      },
+      "expectedValid": false
+    }
+  ]
+}
+

@@ -1,0 +1,65 @@
+{
+  "type": "object",
+  "properties": {
+    "hasEmail": {
+      "type": "boolean"
+    },
+    "hasPhone": {
+      "type": "boolean"
+    },
+    "email": {
+      "type": "string"
+    },
+    "phone": {
+      "type": "string"
+    },
+    "age": {
+      "type": "integer"
+    },
+    "country": {
+      "type": "string"
+    },
+    "requireVerification": {
+      "type": "boolean"
+    },
+    "verificationCode": {
+      "type": "string"
+    }
+  },
+  "conditions": [
+    {
+      "if": "hasEmail == true OR hasPhone == true",
+      "then": {
+        "email": {
+          "minLength": 1,
+          "pattern": "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$"
+        },
+        "phone": {
+          "minLength": 10
+        }
+      }
+    },
+    {
+      "if": "(age < 18 AND country == \"US\") OR requireVerification == true",
+      "then": {
+        "verificationCode": {
+          "minLength": 1
+        }
+      }
+    },
+    {
+      "if": "hasEmail == true AND hasPhone == true",
+      "then": {
+        "email": {
+          "minLength": 1,
+          "pattern": "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$"
+        },
+        "phone": {
+          "minLength": 10,
+          "maxLength": 15
+        }
+      }
+    }
+  ]
+}
+

@@ -1,0 +1,58 @@
+{
+  "type": "object",
+  "properties": {
+    "notificationsEnabled": {
+      "type": "boolean"
+    },
+    "email": {
+      "type": "string"
+    },
+    "age": {
+      "type": "integer"
+    },
+    "requireParentalConsent": {
+      "type": "boolean"
+    },
+    "parentEmail": {
+      "type": "string"
+    }
+  },
+  "conditions": [
+    {
+      "if": "notificationsEnabled == true",
+      "then": {
+        "email": {
+          "minLength": 1,
+          "pattern": "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$"
+        }
+      },
+      "else": {
+        "email": {
+          "allowEmpty": true
+        }
+      }
+    },
+    {
+      "if": "age < 18",
+      "then": {
+        "requireParentalConsent": {
+          "type": "boolean"
+        },
+        "parentEmail": {
+          "minLength": 1,
+          "pattern": "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$"
+        }
+      }
+    },
+    {
+      "if": "requireParentalConsent == true",
+      "then": {
+        "parentEmail": {
+          "minLength": 1,
+          "pattern": "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$"
+        }
+      }
+    }
+  ]
+}
+

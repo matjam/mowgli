@@ -1,0 +1,87 @@
+{
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 100
+    },
+    "age": {
+      "type": "integer",
+      "min": 0,
+      "max": 150
+    },
+    "email": {
+      "type": "string",
+      "pattern": "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$"
+    },
+    "active": {
+      "type": "boolean"
+    },
+    "score": {
+      "type": "number",
+      "min": 0.0,
+      "max": 100.0
+    },
+    "status": {
+      "type": "string",
+      "enum": ["pending", "active", "inactive", "archived"]
+    },
+    "tags": {
+      "type": "array",
+      "minLength": 0,
+      "maxLength": 10,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "address": {
+      "type": "object",
+      "properties": {
+        "street": {
+          "type": "string"
+        },
+        "city": {
+          "type": "string"
+        },
+        "zipCode": {
+          "type": "string",
+          "pattern": "^[0-9]{5}(-[0-9]{4})?$"
+        }
+      },
+      "required": ["street", "city"]
+    },
+    "metadata": {
+      "type": "object",
+      "properties": {}
+    },
+    "hasEmail": {
+      "type": "boolean"
+    },
+    "emailAddress": {
+      "type": "string"
+    }
+  },
+  "required": ["name", "age"],
+  "conditions": [
+    {
+      "if": "hasEmail == true",
+      "then": {
+        "emailAddress": {
+          "minLength": 1,
+          "pattern": "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$"
+        }
+      }
+    },
+    {
+      "if": "hasEmail == false",
+      "then": {
+        "emailAddress": {
+          "allowEmpty": true
+        }
+      }
+    }
+  ]
+}
+

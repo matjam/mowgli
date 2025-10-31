@@ -1,0 +1,130 @@
+{
+  "testCases": [
+    {
+      "name": "valid_nested_object",
+      "data": {
+        "user": {
+          "name": "John Doe",
+          "email": "john@example.com",
+          "address": {
+            "street": "123 Main St",
+            "city": "Springfield",
+            "zipCode": "12345"
+          }
+        },
+        "items": [
+          {
+            "productId": "prod-123",
+            "quantity": 2,
+            "price": 19.99
+          }
+        ]
+      },
+      "expectedValid": true
+    },
+    {
+      "name": "missing_user_name",
+      "data": {
+        "user": {
+          "email": "john@example.com",
+          "address": {
+            "street": "123 Main St",
+            "city": "Springfield",
+            "zipCode": "12345"
+          }
+        },
+        "items": [
+          {
+            "productId": "prod-123",
+            "quantity": 2,
+            "price": 19.99
+          }
+        ]
+      },
+      "expectedValid": false
+    },
+    {
+      "name": "invalid_email_format",
+      "data": {
+        "user": {
+          "name": "John Doe",
+          "email": "not-an-email",
+          "address": {
+            "street": "123 Main St",
+            "city": "Springfield",
+            "zipCode": "12345"
+          }
+        },
+        "items": [
+          {
+            "productId": "prod-123",
+            "quantity": 2,
+            "price": 19.99
+          }
+        ]
+      },
+      "expectedValid": false
+    },
+    {
+      "name": "invalid_zip_code",
+      "data": {
+        "user": {
+          "name": "John Doe",
+          "email": "john@example.com",
+          "address": {
+            "street": "123 Main St",
+            "city": "Springfield",
+            "zipCode": "invalid"
+          }
+        },
+        "items": [
+          {
+            "productId": "prod-123",
+            "quantity": 2,
+            "price": 19.99
+          }
+        ]
+      },
+      "expectedValid": false
+    },
+    {
+      "name": "empty_items_array",
+      "data": {
+        "user": {
+          "name": "John Doe",
+          "email": "john@example.com",
+          "address": {
+            "street": "123 Main St",
+            "city": "Springfield",
+            "zipCode": "12345"
+          }
+        },
+        "items": []
+      },
+      "expectedValid": false
+    },
+    {
+      "name": "item_with_zero_quantity",
+      "data": {
+        "user": {
+          "name": "John Doe",
+          "email": "john@example.com",
+          "address": {
+            "street": "123 Main St",
+            "city": "Springfield",
+            "zipCode": "12345"
+          }
+        },
+        "items": [
+          {
+            "productId": "prod-123",
+            "quantity": 0,
+            "price": 19.99
+          }
+        ]
+      },
+      "expectedValid": false
+    }
+  ]
+}
+

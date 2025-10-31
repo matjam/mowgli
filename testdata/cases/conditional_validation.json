@@ -1,0 +1,78 @@
+{
+  "testCases": [
+    {
+      "name": "notifications_enabled_with_valid_email",
+      "data": {
+        "notificationsEnabled": true,
+        "email": "user@example.com",
+        "age": 25
+      },
+      "expectedValid": true
+    },
+    {
+      "name": "notifications_disabled_email_can_be_empty",
+      "data": {
+        "notificationsEnabled": false,
+        "email": "",
+        "age": 25
+      },
+      "expectedValid": true
+    },
+    {
+      "name": "notifications_enabled_but_email_missing",
+      "data": {
+        "notificationsEnabled": true,
+        "email": "",
+        "age": 25
+      },
+      "expectedValid": false
+    },
+    {
+      "name": "notifications_enabled_but_invalid_email",
+      "data": {
+        "notificationsEnabled": true,
+        "email": "not-an-email",
+        "age": 25
+      },
+      "expectedValid": false
+    },
+    {
+      "name": "minor_with_parental_consent",
+      "data": {
+        "notificationsEnabled": false,
+        "age": 16,
+        "requireParentalConsent": true,
+        "parentEmail": "parent@example.com"
+      },
+      "expectedValid": true
+    },
+    {
+      "name": "minor_without_parental_consent",
+      "data": {
+        "notificationsEnabled": false,
+        "age": 16,
+        "requireParentalConsent": false
+      },
+      "expectedValid": true
+    },
+    {
+      "name": "minor_without_parent_email",
+      "data": {
+        "notificationsEnabled": false,
+        "age": 16,
+        "requireParentalConsent": true,
+        "parentEmail": ""
+      },
+      "expectedValid": false
+    },
+    {
+      "name": "adult_doesnt_need_parental_consent",
+      "data": {
+        "notificationsEnabled": false,
+        "age": 25
+      },
+      "expectedValid": true
+    }
+  ]
+}
+

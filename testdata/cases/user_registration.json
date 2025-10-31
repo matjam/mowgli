@@ -1,0 +1,63 @@
+{
+  "testCases": [
+    {
+      "name": "valid_registration",
+      "data": {
+        "username": "johndoe",
+        "email": "john@example.com",
+        "password": "securepass123",
+        "age": 25
+      },
+      "expectedValid": true
+    },
+    {
+      "name": "missing_required_field",
+      "data": {
+        "username": "johndoe",
+        "email": "john@example.com"
+      },
+      "expectedValid": false
+    },
+    {
+      "name": "invalid_email_format",
+      "data": {
+        "username": "johndoe",
+        "email": "not-an-email",
+        "password": "securepass123",
+        "age": 25
+      },
+      "expectedValid": false
+    },
+    {
+      "name": "password_too_short",
+      "data": {
+        "username": "johndoe",
+        "email": "john@example.com",
+        "password": "short",
+        "age": 25
+      },
+      "expectedValid": false
+    },
+    {
+      "name": "username_with_invalid_characters",
+      "data": {
+        "username": "john-doe",
+        "email": "john@example.com",
+        "password": "securepass123",
+        "age": 25
+      },
+      "expectedValid": false
+    },
+    {
+      "name": "age_too_young",
+      "data": {
+        "username": "johndoe",
+        "email": "john@example.com",
+        "password": "securepass123",
+        "age": 10
+      },
+      "expectedValid": false
+    }
+  ]
+}
+
