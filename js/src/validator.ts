@@ -1,5 +1,4 @@
 import { Spec, ValidationResult, ValidationError } from './types';
-import { evalExpression } from './expression';
 
 export class ValidationErrorClass implements ValidationError {
   path: string;
@@ -280,47 +279,10 @@ export class ValidationResultClass implements ValidationResult {
       return effectiveSpecs;
     }
 
-    // Collect all overrides first, then merge them all together
-    for (const condition of spec.conditions) {
-      let result: boolean;
-      try {
-        result = evalExpression(condition.if, obj);
-      } catch (err) {
-        this.addError(
-          '',
-          `error evaluating condition '${condition.if}': ${err}`
-        );
-        continue;
-      }
-
-      const overrides = result ? condition.then : condition.else;
-
-      if (overrides) {
-        for (const [fieldName, overrideSpec] of Object.entries(overrides)) {
-          // Get or create the effective spec for this field
-          if (effectiveSpecs[fieldName]) {
-            // Merge with existing override
-            effectiveSpecs[fieldName] = this.mergeSpecs(
-              effectiveSpecs[fieldName],
-              overrideSpec
-            );
-          } else {
-            // Start from base spec or create new
-            if (spec.properties && spec.properties[fieldName]) {
-              const merged = this.mergeSpecs(
-                spec.properties[fieldName],
-                overrideSpec
-              );
-              effectiveSpecs[fieldName] = merged;
-            } else {
-              // Condition defines a new validation for a field not in properties
-              effectiveSpecs[fieldName] = overrideSpec;
-            }
-          }
-        }
-      }
-    }
-
+    // Client-side validation cannot evaluate expressions
+    // This method will only be called for basic validation without expressions
+    // When expressions are present, server-side validation should be used
+    // We return empty effectiveSpecs to skip condition processing client-side
     return effectiveSpecs;
   }
 
@@ -407,9 +369,133 @@ function deepEqual(a: any, b: any): boolean {
 }
 
 /**
- * Validates a value against a spec
+ * Checks if a spec contains expressions (conditions) that require server-side evaluation
  */
-export function validate(value: any, spec: Spec): ValidationResult {
+function hasExpressions(spec: Spec): boolean {
+  if (!spec) {
+    return false;
+  }
+
+  // Check if this spec has conditions
+  if (spec.conditions && spec.conditions.length > 0) {
+    return true;
+  }
+
+  // Recursively check nested specs
+  if (spec.properties) {
+    for (const propSpec of Object.values(spec.properties)) {
+      if (hasExpressions(propSpec)) {
+        return true;
+      }
+    }
+  }
+
+  if (spec.items && hasExpressions(spec.items)) {
+    return true;
+  }
+
+  return false;
+}
+
+/**
+ * Validates data using server-side validation endpoint
+ * This is used when expressions are detected in the spec
+ */
+export async function validateWithServer(
+  value: any,
+  spec: Spec,
+  endpoint: string,
+  options?: {
+    headerName?: string;
+    headerValue?: string;
+    fetchOptions?: RequestInit;
+  }
+): Promise<ValidationResult> {
+  const {
+    headerName = 'X-Mowgli',
+    headerValue = 'validate',
+    fetchOptions = {},
+  } = options || {};
+
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    ...(fetchOptions.headers as Record<string, string>),
+    [headerName]: headerValue,
+  };
+
+  try {
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      ...fetchOptions,
+      headers,
+      body: JSON.stringify(value),
+    });
+
+    if (!response.ok) {
+      // If server returns validation errors, parse them
+      if (response.status === 400) {
+        try {
+          const errors = await response.json();
+          const result = new ValidationResultClass();
+          if (Array.isArray(errors)) {
+            for (const err of errors) {
+              result.addError(err.path || '', err.message || String(err));
+            }
+          }
+          return result;
+        } catch {
+          // Fall through to error handling
+        }
+      }
+
+      throw new Error(`Server validation failed: ${response.statusText}`);
+    }
+
+    // If validation passes, server should return 200 with no body or a success response
+    const result = new ValidationResultClass();
+    return result;
+  } catch (err) {
+    const result = new ValidationResultClass();
+    result.addError('', `Server validation error: ${err}`);
+    return result;
+  }
+}
+
+/**
+ * Validates a value against a spec
+ * If the spec contains expressions (conditions), this will attempt to use
+ * server-side validation if an endpoint is provided via options.
+ * Otherwise, it performs client-side validation (basic constraints only).
+ */
+export function validate(
+  value: any,
+  spec: Spec,
+  options?: {
+    /** Endpoint URL for server-side validation when expressions are present */
+    endpoint?: string;
+    /** Custom header name for validation request (default: 'X-Mowgli') */
+    headerName?: string;
+    /** Custom header value for validation request (default: 'validate') */
+    headerValue?: string;
+    /** Additional fetch options */
+    fetchOptions?: RequestInit;
+  }
+): ValidationResult | Promise<ValidationResult> {
+  // Check if spec has expressions that require server-side evaluation
+  if (hasExpressions(spec)) {
+    const endpoint = options?.endpoint;
+    if (endpoint) {
+      // Use server-side validation
+      return validateWithServer(value, spec, endpoint, options);
+    } else {
+      // No endpoint provided, do basic validation only (expressions will be skipped)
+      const result = new ValidationResultClass();
+      result.validate(value, spec, '');
+      return result;
+    }
+  }
+
+  // No expressions, do full client-side validation
   const result = new ValidationResultClass();
   result.validate(value, spec, '');
   return result;
@@ -417,11 +503,21 @@ export function validate(value: any, spec: Spec): ValidationResult {
 
 /**
  * Validates JSON data against a spec
+ * See validate() for details on expression handling
  */
-export function validateJSON(jsonData: string, spec: Spec): ValidationResult {
+export function validateJSON(
+  jsonData: string,
+  spec: Spec,
+  options?: {
+    endpoint?: string;
+    headerName?: string;
+    headerValue?: string;
+    fetchOptions?: RequestInit;
+  }
+): ValidationResult | Promise<ValidationResult> {
   try {
     const data = JSON.parse(jsonData);
-    return validate(data, spec);
+    return validate(data, spec, options);
   } catch (err) {
     const result = new ValidationResultClass();
     result.addError('', `invalid JSON: ${err}`);

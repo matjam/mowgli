@@ -50,18 +50,46 @@ export function validateField(
   fieldName: string,
   fieldValue: any,
   allFormValues: Record<string, any>,
-  spec: Spec
+  spec: Spec,
+  endpoint?: string
 ): {
-  valid: boolean;
-  error: string | null;
-  errors: Array<{ path: string; message: string }>;
+  valid: boolean | Promise<boolean>;
+  error: string | null | Promise<string | null>;
+  errors: Array<{ path: string; message: string }> | Promise<Array<{ path: string; message: string }>>;
 } {
   // Create a temporary object with the current field value in context
   const testData = { ...allFormValues, [fieldName]: fieldValue };
 
-  const result = validate(testData, spec);
+  const result = validate(testData, spec, endpoint ? { endpoint } : undefined);
 
-  // Filter errors for this specific field
+  // Handle both sync and async results
+  if (result instanceof Promise) {
+    return {
+      valid: result.then((r) => {
+        const fieldErrors = r.errors.filter(
+          (err) => err.path === fieldName || err.path.startsWith(`${fieldName}.`)
+        );
+        return fieldErrors.length === 0;
+      }),
+      error: result.then((r) => {
+        const fieldErrors = r.errors.filter(
+          (err) => err.path === fieldName || err.path.startsWith(`${fieldName}.`)
+        );
+        return fieldErrors[0]?.message || null;
+      }),
+      errors: result.then((r) => {
+        const fieldErrors = r.errors.filter(
+          (err) => err.path === fieldName || err.path.startsWith(`${fieldName}.`)
+        );
+        return fieldErrors.map((err) => ({
+          path: err.path,
+          message: err.message,
+        }));
+      }),
+    };
+  }
+
+  // Client-side validation (sync)
   const fieldErrors = result.errors.filter(
     (err) => err.path === fieldName || err.path.startsWith(`${fieldName}.`)
   );
@@ -121,15 +149,31 @@ export function groupAllErrorsByField(
 /**
  * Creates a form validator function that can be used with any framework
  * @param spec The validation spec
+ * @param endpoint Optional endpoint URL for server-side validation when expressions are present
  * @returns An object with validation functions
  */
-export function createFormValidator(spec: Spec) {
+export function createFormValidator(
+  spec: Spec,
+  endpoint?: string
+): {
+  validateForm: (
+    values: Record<string, any>
+  ) => ValidationResult | Promise<ValidationResult>;
+  validateField: (
+    fieldName: string,
+    fieldValue: any,
+    allFormValues: Record<string, any>
+  ) => ValidationResult | Promise<ValidationResult>;
+  isValid: (
+    values: Record<string, any>
+  ) => boolean | Promise<boolean>;
+} {
   return {
     /**
      * Validates all form values
      */
-    validateForm: (values: Record<string, any>): ValidationResult => {
-      return validate(values, spec);
+    validateForm: (values: Record<string, any>) => {
+      return validate(values, spec, endpoint ? { endpoint } : undefined);
     },
 
     /**
@@ -140,14 +184,44 @@ export function createFormValidator(spec: Spec) {
       fieldValue: any,
       allFormValues: Record<string, any>
     ) => {
-      return validateField(fieldName, fieldValue, allFormValues, spec);
+      // For field validation, we still need to validate the whole form context
+      // but filter results for the specific field
+      const testData = { ...allFormValues, [fieldName]: fieldValue };
+      const result = validate(testData, spec, endpoint ? { endpoint } : undefined);
+      
+      // If result is a Promise (server-side validation), we need to handle it
+      if (result instanceof Promise) {
+        return result.then((r) => {
+          const fieldErrors = r.errors.filter(
+            (err) => err.path === fieldName || err.path.startsWith(`${fieldName}.`)
+          );
+          return {
+            ...r,
+            errors: fieldErrors,
+            valid: fieldErrors.length === 0,
+          } as ValidationResult;
+        });
+      }
+      
+      // Client-side validation
+      const fieldErrors = result.errors.filter(
+        (err) => err.path === fieldName || err.path.startsWith(`${fieldName}.`)
+      );
+      return {
+        ...result,
+        errors: fieldErrors,
+        valid: fieldErrors.length === 0,
+      } as ValidationResult;
     },
 
     /**
      * Checks if form is valid without returning detailed errors
      */
-    isValid: (values: Record<string, any>): boolean => {
-      const result = validate(values, spec);
+    isValid: (values: Record<string, any>) => {
+      const result = validate(values, spec, endpoint ? { endpoint } : undefined);
+      if (result instanceof Promise) {
+        return result.then((r) => r.valid);
+      }
       return result.valid;
     },
   };

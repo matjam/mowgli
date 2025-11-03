@@ -1,6 +1,7 @@
 export * from './types';
 export * from './validator';
 export * from './expression';
+export { validateWithServer } from './validator';
 
 /**
  * Parses a JSON spec string into a Spec object

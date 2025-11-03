@@ -47,7 +47,9 @@ if (!result.valid) {
 const jsonResult = validateJSON('{"name": "John", "age": 30}', spec);
 ```
 
-### Conditional Validation
+### Conditional Validation with Expressions
+
+When your spec contains expressions in `conditions` (e.g., `"if": "enabled == true"`), the library automatically detects this and uses server-side validation. You need to provide an endpoint URL for validation:
 
 ```typescript
 const spec = parseSpec(`{
@@ -62,24 +64,33 @@ const spec = parseSpec(`{
       "then": {
         "value": {"minLength": 1}
       }
-    },
-    {
-      "if": "enabled == false",
-      "then": {
-        "value": {"allowEmpty": true}
-      }
     }
   ]
 }`);
 
-// When enabled is true, value must have minLength 1
-const result1 = validate({ enabled: true, value: "hello" }, spec);
-console.log(result1.valid); // true
+// With expressions, provide endpoint for server-side validation
+const result = await validate(
+  { enabled: true, value: "hello" },
+  spec,
+  { endpoint: "/api/users" }  // Server endpoint that handles X-Mowgli: validate header
+);
 
-// When enabled is false, value can be empty
-const result2 = validate({ enabled: false, value: "" }, spec);
-console.log(result2.valid); // true
+// Note: validate() may return a Promise when expressions are present
+if (result instanceof Promise) {
+  const resolved = await result;
+  console.log(resolved.valid);
+} else {
+  console.log(result.valid);
+}
 ```
+
+**Important:** When a spec contains expressions (conditions with `if` fields), you must provide an `endpoint` option. The library will automatically:
+1. Detect that expressions are present
+2. Make a POST request to your endpoint with `X-Mowgli: validate` header
+3. Send the data as JSON in the request body
+4. Parse validation errors from a 400 response, or treat 200 as valid
+
+If no endpoint is provided, the library will perform basic constraint validation (required, min, max, etc.) but will skip expression evaluation.
 
 ### TypeScript Support
 
@@ -152,13 +163,15 @@ yarn clean
 
 ## Features
 
-- ✅ No external runtime dependencies
+- ✅ No external runtime dependencies (except for server-side expression evaluation)
 - ✅ Full TypeScript support
-- ✅ Conditional validation with expression evaluation
+- ✅ Automatic server-side validation for expressions (conditions)
+- ✅ Client-side validation for basic constraints (required, min, max, minLength, etc.)
 - ✅ All standard JSON types (string, number, integer, boolean, object, array, null)
 - ✅ Comprehensive constraints (min, max, minLength, maxLength, pattern, enum, allowEmpty)
 - ✅ Nested object and array validation
 - ✅ Detailed error messages with field paths
+- ✅ Transparent handling of sync/async validation (auto-detects when server-side is needed)
 
 ## License
 
